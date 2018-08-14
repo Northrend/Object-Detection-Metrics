@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from BoundingBox import *
 from utils import *
 
@@ -35,6 +36,9 @@ class BoundingBoxes:
             if c not in classes:
                 classes.append(c)
         return classes
+
+    def getNumberBoxes(self):
+        return len(self._boundingBoxes)
 
     def getBoundingBoxesByType(self, bbType):
         # get only specified bb type
@@ -118,7 +122,7 @@ class BoundingBoxes:
 
 # # Multiple detections of the same object in an image are considered
 # # false detections e.g. 5 detections of a single object is counted as 1 correct detec-
-# # tion and 4 false detections – it is the responsibility of the participant’s system
+# # tion and 4 false detections - it is the responsibility of the participant’s system
 # # to filter multiple detections from its output
 
 #         # For each class, get its GTs and detections

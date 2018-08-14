@@ -10,7 +10,9 @@
 
 from BoundingBox import *
 from BoundingBoxes import *
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 from collections import Counter
 from utils import *
 import numpy as np
@@ -160,7 +162,7 @@ class Evaluator:
 
         if showInterpolatedPrecision:
             plt.plot(mrec, mpre, '--r' , label='Interpolated precision')
-        plt.plot(recall, precision, label='Precision')
+        # plt.plot(recall, precision, label='Precision')
         plt.xlabel('recall')
         plt.ylabel('precision')
         if showAP:

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ###########################################################################################
 #                                                                                         #
 # This sample shows how to evaluate object detections applying the following metrics:     #
@@ -10,18 +11,22 @@
 #        Last modification: May 24th 2018                                                 #
 ###########################################################################################
 
+from __future__ import print_function
 import _init_paths
 from BoundingBox import BoundingBox
 from BoundingBoxes import BoundingBoxes
 from Evaluator import *
 from utils import BBFormat
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 import argparse
 from argparse import RawTextHelpFormatter
 import sys
 import os
 import glob
 import shutil
+import json
 
 # Validate formats
 def ValidateFormats(argFormat, argName, errors):
@@ -67,7 +72,8 @@ def ValidateCoordinatesTypes(arg, argName, errors):
 def ValidatePaths(arg, nameArg, errors):
     if arg == None:
         errors.append('argument %s: invalid directory' % nameArg)
-    elif os.path.isdir(arg)==False:
+    # elif os.path.isdir(arg)==False:
+    elif os.path.exists(arg)==False:
         errors.append('argument %s: directory does not exist \'%s\'' % (nameArg, arg))
     return arg
 
@@ -116,6 +122,54 @@ def getBoundingBoxes(directory, isGT, bbFormat, allBoundingBoxes=None, allClasse
             if idClass not in allClasses:
                 allClasses.append(idClass)
         fh1.close()
+    return allBoundingBoxes, allClasses
+
+def getBoundingBoxesJson(input_json, isGT, bbFormat, allBoundingBoxes=None, allClasses=None):
+    """Read txt files containing bounding boxes (ground truth and detections)."""
+    if allBoundingBoxes == None:
+        allBoundingBoxes = BoundingBoxes()
+    if allClasses == None:
+        allClasses = []
+    # Read ground truths
+    with open(input_json,'r') as f:
+        json_ann = json.load(f)
+    # Read GT detections from txt file
+    # Each line of the files in the groundtruths folder represents a ground truth bounding box (bounding boxes that a detector should detect)
+    # Each value of each line is  "class_id, x, y, width, height" respectively
+    # Class_id represents the class of the bounding box
+    # x, y represents the most top-left coordinates of the bounding box
+    # x2, y2 represents the most bottom-right coordinates of the bounding box
+    if isGT:
+        cats = ['__background__']
+        cats.extend(['' for x in range(len(json_ann['categories']))]) 
+        for cat in json_ann['categories']:
+            cats[int(cat['id'])] = cat['name']    # start from 1
+        print(cats)
+        for box in json_ann['annotations']:
+            nameOfImage = box['image_id']
+            idClass = cats[box['category_id']]     #class
+            x = float(box['bbox'][0])
+            y = float(box['bbox'][1])
+            w = float(box['bbox'][2])
+            h = float(box['bbox'][3])
+            bb = BoundingBox(nameOfImage,idClass,x,y,w,h,CoordinatesType.Absolute, (0,0), BBType.GroundTruth, format=bbFormat)
+            allBoundingBoxes.addBoundingBox(bb)
+            if idClass not in allClasses:
+                allClasses.append(idClass)
+    else:
+        for img in json_ann:
+            nameOfImage = img 
+            for box in json_ann[img]:
+                idClass = box[-1]     #class
+                confidence = float(box[-2])
+                x = float(box[0])
+                y = float(box[1])
+                w = float(box[2])
+                h = float(box[3])
+                bb = BoundingBox(nameOfImage,idClass,x,y,w,h,CoordinatesType.Absolute, (0,0), BBType.Detected, confidence, format=bbFormat)
+                allBoundingBoxes.addBoundingBox(bb)
+                if idClass not in allClasses:
+                    allClasses.append(idClass)
     return allBoundingBoxes, allClasses
 
 VERSION = '0.1 (beta)'
@@ -213,8 +267,8 @@ showPlot = args.showPlot
 # print('detCoordType = %s' % detCoordType)
 # print('showPlot %s' % showPlot)
 
-allBoundingBoxes, allClasses = getBoundingBoxes(gtFolder, True, gtFormat)
-allBoundingBoxes, allClasses = getBoundingBoxes(detFolder, False, detFormat, allBoundingBoxes, allClasses)
+allBoundingBoxes, allClasses = getBoundingBoxesJson(gtFolder, True, gtFormat)
+allBoundingBoxes, allClasses = getBoundingBoxesJson(detFolder, False, detFormat, allBoundingBoxes, allClasses)
 allClasses.sort()
 
 f = open(os.path.join(savePath,'results.txt'),'w') 
@@ -225,6 +279,7 @@ f.write('Average Precision (AP), Precision and Recall per class:')
 evaluator = Evaluator()
 acc_AP = 0
 validClasses = 0
+epsilon = 1e-10
 # for each class
 for c in allClasses:
     # Plot Precision x Recall curve
@@ -257,7 +312,7 @@ for c in allClasses:
         f.write('\nPrecision: %s' % prec)
         f.write('\nRecall: %s' % rec)
 
-mAP = acc_AP/validClasses
+mAP = acc_AP/validClasses if validClasses!=0 else acc_AP/epsilon
 mAP_str = "{0:.2f}%".format(mAP*100)
 print('mAP: %s' % mAP_str)
 f.write('\n\n\nmAP: %s' % mAP_str)
