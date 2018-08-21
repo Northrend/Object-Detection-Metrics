@@ -144,7 +144,7 @@ def getBoundingBoxesJson(input_json, isGT, bbFormat, allBoundingBoxes=None, allC
         cats.extend(['' for x in range(len(json_ann['categories']))]) 
         for cat in json_ann['categories']:
             cats[int(cat['id'])] = cat['name']    # start from 1
-        print(cats)
+        # print(cats)
         for box in json_ann['annotations']:
             nameOfImage = box['image_id']
             idClass = cats[box['category_id']]     #class

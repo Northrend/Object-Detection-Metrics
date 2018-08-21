@@ -18,6 +18,8 @@ from utils import *
 import numpy as np
 import sys
 
+epsilon=1e-10
+
 class Evaluator:
     
     def GetPascalVOCMetrics(self, boundingboxes, IOUThreshold=0.5):
@@ -101,7 +103,7 @@ class Evaluator:
             # compute precision, recall and average precision
             acc_FP=np.cumsum(FP)
             acc_TP=np.cumsum(TP)
-            rec=acc_TP/npos
+            rec=acc_TP/npos if npos!=0 else acc_TP/epsilon
             prec=np.divide(acc_TP,(acc_FP+acc_TP))
             [ap, mpre, mrec, ii] = Evaluator.CalculateAveragePrecision(rec, prec)
             # add class result in the dictionary to be returned
