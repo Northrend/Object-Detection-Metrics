@@ -141,8 +141,8 @@ def getBoundingBoxesJson(input_json, isGT, bbFormat, allBoundingBoxes=None, allC
     # x2, y2 represents the most bottom-right coordinates of the bounding box
     if isGT:
         cats = ['__background__']
-        cats.extend(['' for x in range(len(json_ann['categories']))]) 
-        for cat in json_ann['categories']:
+        cats.extend(['' for x in range(max(len(json_ann['categories']), int(json_ann['categories'][-1]['id'])))]) 
+        for idx,cat in enumerate(json_ann['categories']):
             cats[int(cat['id'])] = cat['name']    # start from 1
         # print(cats)
         for box in json_ann['annotations']:
@@ -257,7 +257,7 @@ os.makedirs(savePath)
 # Show plot during execution
 showPlot = args.showPlot
 
-# print('iouThreshold= %f' % iouThreshold)
+print('IOUThreshold = %.2f' % iouThreshold)
 # print('savePath = %s' % savePath)
 # print('gtFormat = %s' % gtFormat)
 # print('detFormat = %s' % detFormat)
